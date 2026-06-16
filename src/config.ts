@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type { NaverCommerceConfig, TokenType } from "./types.js";
 
 const OFFICIAL_BASE_URL = "https://api.commerce.naver.com/external";
@@ -38,6 +40,15 @@ function normalizeBaseUrl(value: string | undefined): string {
   return raw;
 }
 
+function parseAllowedFileRoots(value: string | undefined): string[] {
+  if (!value?.trim()) return [];
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => path.resolve(entry));
+}
+
 export function loadConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): NaverCommerceConfig {
@@ -50,6 +61,13 @@ export function loadConfig(
     tokenType,
     accountId,
     allowMutations: parseBoolean(env.NAVER_COMMERCE_ALLOW_MUTATIONS, false),
+    allowedFileRoots: parseAllowedFileRoots(env.NAVER_COMMERCE_ALLOWED_FILE_ROOTS),
+    maxImageBytes: parseInteger(
+      env.NAVER_COMMERCE_MAX_IMAGE_BYTES,
+      20 * 1024 * 1024,
+      1024,
+      100 * 1024 * 1024,
+    ),
     timeoutMs: parseInteger(env.NAVER_COMMERCE_TIMEOUT_MS, 30_000, 1_000, 120_000),
     maxRetries: parseInteger(env.NAVER_COMMERCE_MAX_RETRIES, 2, 0, 5),
     tokenRefreshMarginMs: parseInteger(
@@ -89,6 +107,9 @@ export function publicConfig(config: NaverCommerceConfig): Record<string, unknow
     tokenType: config.tokenType,
     accountIdConfigured: Boolean(config.accountId),
     allowMutations: config.allowMutations,
+    imageUploadEnabled: config.allowedFileRoots.length > 0,
+    allowedFileRootCount: config.allowedFileRoots.length,
+    maxImageBytes: config.maxImageBytes,
     timeoutMs: config.timeoutMs,
     maxRetries: config.maxRetries,
     tokenRefreshMarginMs: config.tokenRefreshMarginMs,

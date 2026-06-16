@@ -48,5 +48,5 @@ NAVER applies token-bucket rate limiting. HTTP 429 should be retried with bounde
 
 ## Known scope gaps
 
-The generic JSON client does not implement multipart upload/download endpoints. Review collection and TalkTalk consultation data are not exposed by the Commerce API according to NAVER's technical-support guidance. Always verify the current official documentation before adding a new workflow.
+Product image multipart upload is implemented with local file-root isolation. Generic file download and streaming endpoints are not implemented. Review collection and TalkTalk consultation data are not exposed by the Commerce API according to NAVER's technical-support guidance. Always verify the current official documentation before adding a new workflow.
 `;

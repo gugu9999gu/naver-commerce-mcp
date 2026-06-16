@@ -11,6 +11,8 @@ export type NaverCommerceConfig = {
   tokenType: TokenType;
   accountId?: string | undefined;
   allowMutations: boolean;
+  allowedFileRoots: string[];
+  maxImageBytes: number;
   timeoutMs: number;
   maxRetries: number;
   tokenRefreshMarginMs: number;

@@ -80,16 +80,19 @@ export class NaverCommerceClient {
     const method = options.method;
     const safeToRetry = options.safeToRetry ?? method === "GET";
     let authRetried = false;
+    let forceTokenRefresh = false;
     let transientRetries = 0;
 
     while (true) {
-      const token = await this.tokens.getToken(authRetried);
-      const response = await this.perform({ ...options, path, method }, token);
+      const token = await this.tokens.getToken(forceTokenRefresh);
+      forceTokenRefresh = false;
+      const response = await this.performJson({ ...options, path, method }, token);
       const code = getErrorCode(response.data);
 
       if (response.status === 401 && code === "GW.AUTHN" && !authRetried) {
         this.tokens.clear();
         authRetried = true;
+        forceTokenRefresh = true;
         continue;
       }
 
@@ -104,17 +107,47 @@ export class NaverCommerceClient {
         continue;
       }
 
-      if (!response.ok) {
-        throw new NaverCommerceApiError(
-          `NAVER Commerce API failed: ${method} ${path} -> HTTP ${response.status} ${response.statusText}`,
-          response,
-        );
-      }
-      return response;
+      return ensureSuccess(response);
     }
   }
 
-  private async perform(
+  async requestMultipart(
+    pathInput: string,
+    formDataFactory: () => FormData,
+  ): Promise<NaverApiResponse> {
+    const path = validateApiPath(pathInput);
+    let authRetried = false;
+    let forceTokenRefresh = false;
+
+    while (true) {
+      const token = await this.tokens.getToken(forceTokenRefresh);
+      forceTokenRefresh = false;
+      const url = buildApiUrl(this.config.baseUrl, path, undefined);
+      const response = await this.fetchImpl(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataFactory(),
+        signal: AbortSignal.timeout(this.config.timeoutMs),
+      });
+      const result = await buildResponse(response, "POST", path);
+      const code = getErrorCode(result.data);
+
+      if (result.status === 401 && code === "GW.AUTHN" && !authRetried) {
+        this.tokens.clear();
+        authRetried = true;
+        forceTokenRefresh = true;
+        continue;
+      }
+
+      // Multipart mutations are deliberately never retried automatically.
+      return ensureSuccess(result);
+    }
+  }
+
+  private async performJson(
     options: RequestOptions,
     token: string,
   ): Promise<NaverApiResponse> {
@@ -138,22 +171,39 @@ export class NaverCommerceClient {
     if (body !== undefined) requestInit.body = body;
 
     const response = await this.fetchImpl(url, requestInit);
-
-    const data = await parseResponseBody(response);
-    const result: NaverApiResponse = {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      method: options.method,
-      path: options.path,
-      data,
-    };
-    const traceId = response.headers.get("gncp-gw-trace-id");
-    const responseTime = response.headers.get("gncp-gw-httpclient-responsetime");
-    if (traceId) result.traceId = traceId;
-    if (responseTime) result.gatewayResponseTimeMs = responseTime;
-    return result;
+    return buildResponse(response, options.method, options.path);
   }
+}
+
+function ensureSuccess(response: NaverApiResponse): NaverApiResponse {
+  if (!response.ok) {
+    throw new NaverCommerceApiError(
+      `NAVER Commerce API failed: ${response.method} ${response.path} -> HTTP ${response.status} ${response.statusText}`,
+      response,
+    );
+  }
+  return response;
+}
+
+async function buildResponse(
+  response: Response,
+  method: HttpMethod,
+  path: string,
+): Promise<NaverApiResponse> {
+  const data = await parseResponseBody(response);
+  const result: NaverApiResponse = {
+    ok: response.ok,
+    status: response.status,
+    statusText: response.statusText,
+    method,
+    path,
+    data,
+  };
+  const traceId = response.headers.get("gncp-gw-trace-id");
+  const responseTime = response.headers.get("gncp-gw-httpclient-responsetime");
+  if (traceId) result.traceId = traceId;
+  if (responseTime) result.gatewayResponseTimeMs = responseTime;
+  return result;
 }
 
 async function parseResponseBody(response: Response): Promise<unknown> {
