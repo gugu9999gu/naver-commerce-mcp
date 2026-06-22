@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   });
 
   await server.connect(transport);
-  console.error("naver-commerce-mcp 1.2.0 running on stdio");
+  console.error("naver-commerce-mcp 1.2.1 running on stdio");
 }
 
 main().catch((error: unknown) => {

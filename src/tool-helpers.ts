@@ -3,7 +3,7 @@ import { z } from "zod";
 import { NaverCommerceApiError, NaverCommerceClient } from "./client.js";
 import type { HttpMethod, JsonValue, NaverCommerceConfig } from "./types.js";
 
-export const VERSION = "1.2.0";
+export const VERSION = "1.2.1";
 export const jsonObject = z.record(z.unknown());
 export const optionalJsonObject = jsonObject.optional();
 export const querySchema = z.record(
