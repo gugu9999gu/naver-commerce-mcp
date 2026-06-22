@@ -57,7 +57,7 @@ export function registerInquiryTools(
     inputSchema: {
       startSearchDate: z.string().min(1), endSearchDate: z.string().min(1),
       answered: z.boolean().default(false), page: z.number().int().min(1).default(1),
-      size: z.number().int().min(1).max(100).default(20),
+      size: z.number().int().min(10).max(200).default(20),
     },
     annotations: readAnnotations(),
   }, async (query) => callApi(client, {
@@ -66,18 +66,18 @@ export function registerInquiryTools(
 
   server.registerTool("naver_commerce_answer_customer_inquiry", {
     title: "Create or update a NAVER Pay inquiry answer",
-    description: "POST creates an answer; answerContentId switches to PUT update.",
+    description: "POST creates an answer; answerContentId switches to PUT update. Body field is answerComment per the official pay-merchant spec.",
     inputSchema: {
       inquiryNo: identifier, answerContentId: identifier.optional(),
-      answer: z.string().min(1), confirm: executeConfirmation,
+      answer: z.string().min(1), answerTemplateId: identifier.optional(), confirm: executeConfirmation,
     },
     annotations: mutationAnnotations(true),
-  }, async ({ inquiryNo, answerContentId, answer, confirm }) => {
+  }, async ({ inquiryNo, answerContentId, answer, answerTemplateId, confirm }) => {
     const suffix = answerContentId === undefined ? "" : `/${encodeURIComponent(String(answerContentId))}`;
     return guardedMutation(
       config, confirm, client, answerContentId === undefined ? "POST" : "PUT",
       `/v1/pay-merchant/inquiries/${encodeURIComponent(String(inquiryNo))}/answer${suffix}`,
-      { replyContent: answer },
+      { answerComment: answer, ...(answerTemplateId === undefined ? {} : { answerTemplateId }) },
     );
   });
 }

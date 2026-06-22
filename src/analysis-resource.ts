@@ -48,5 +48,7 @@ NAVER applies token-bucket rate limiting. HTTP 429 should be retried with bounde
 
 ## Known scope gaps
 
-Product image multipart upload is implemented with local file-root isolation. Generic file download and streaming endpoints are not implemented. Review collection and TalkTalk consultation data are not exposed by the Commerce API according to NAVER's technical-support guidance. Always verify the current official documentation before adding a new workflow.
+Product image multipart upload is implemented with local file-root isolation. Generic file download and streaming endpoints are not implemented.
+
+Several seller capabilities are not exposed by the Commerce API at all (so no MCP/SDK can do them; they are SmartStore Center UI only), per NAVER's official GitHub answers: coupon issuance and benefit query/edit (discussions #3199, #3465), reward/point policy management, product reviews/구매평 (discussion #1909) and TalkTalk consultation data (discussion #1582), address-book create/update/delete (read only), order quantity split, buyer shipping-address change, and seller-side purchase decision (구매확정 is a buyer action). Immediate discounts are configured only inline on products via immediateDiscountPolicy/reservedDiscountPolicy. Always verify the current official documentation before adding a new workflow.
 `;

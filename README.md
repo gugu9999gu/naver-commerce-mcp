@@ -20,6 +20,7 @@
 - 로컬 이미지 1~10개 multipart 업로드
 - 상품 등록, 수정, 삭제
 - 판매 상태, 옵션 재고, 멀티 상품 수정
+- 그룹(표준그룹)상품 등록·수정·삭제·조회와 비동기 결과 폴링
 
 ### 주문 및 클레임
 
@@ -37,7 +38,8 @@
 - 상품 문의 답변 등록·수정
 - 네이버페이 고객 문의 조회와 답변 등록·수정
 - 부가세, 정산, 수수료 조회
-- N배송 SKU와 연결 상품 조회
+- N배송 SKU·연결 상품·출고지 창고·물류사·반품 택배사 코드 조회
+- 오늘출발 설정 조회·변경, 배송 희망일 변경
 
 ## 필수 조건
 
@@ -143,12 +145,14 @@ NAVER_COMMERCE_ALLOW_MUTATIONS=true
 - 상품 조회: `naver_commerce_search_products`, `naver_commerce_get_product`, `naver_commerce_lookup_product_metadata`
 - 상품 변경: `naver_commerce_upload_product_images`, `naver_commerce_create_product`, `naver_commerce_update_product`, `naver_commerce_delete_product`
 - 재고·상태: `naver_commerce_change_product_status`, `naver_commerce_update_option_stock`, `naver_commerce_multi_update_products`
+- 그룹상품: `naver_commerce_create_group_product`, `naver_commerce_get_group_product_result`, `naver_commerce_get_group_product`, `naver_commerce_update_group_product`, `naver_commerce_delete_group_product`
 - 주문 조회: `naver_commerce_get_changed_product_orders`, `naver_commerce_get_orders`, `naver_commerce_get_product_order_details`
-- 주문 처리: `naver_commerce_confirm_orders`, `naver_commerce_dispatch_orders`, `naver_commerce_delay_dispatch`
+- 주문 처리: `naver_commerce_confirm_orders`, `naver_commerce_dispatch_orders`, `naver_commerce_delay_dispatch`, `naver_commerce_change_hope_delivery`
 - 클레임: `naver_commerce_manage_claim`
 - 문의: `naver_commerce_get_product_qnas`, `naver_commerce_answer_product_qna`, `naver_commerce_get_customer_inquiries`, `naver_commerce_answer_customer_inquiry`
 - 정산: `naver_commerce_get_settlement_data`
-- N배송: `naver_commerce_list_skus`, `naver_commerce_get_sku`
+- 배송 설정: `naver_commerce_get_this_day_dispatch`, `naver_commerce_set_this_day_dispatch`
+- N배송·물류: `naver_commerce_list_skus`, `naver_commerce_get_sku`, `naver_commerce_get_logistics_companies`, `naver_commerce_get_outbound_locations`, `naver_commerce_get_return_delivery_companies`
 - 확장: `naver_commerce_request`, `naver_commerce_execute_mutation`
 
 ## 이미지 업로드 보안
@@ -197,9 +201,18 @@ npx @modelcontextprotocol/inspector node --env-file=.env dist/src/index.js
 - 실제 스마트스토어 호출 성공 여부는 사용자의 네이버 자격 증명, 애플리케이션 권한, 판매자 상태에 달려 있다.
 - 상품 등록은 카테고리별 필수 필드가 달라 최신 공식 JSON 요청 객체를 그대로 받는다.
 - 파일 다운로드와 대용량 스트리밍 API는 포함하지 않았다.
-- 리뷰와 톡톡 상담 데이터는 지원 범위가 아니다.
 - 원격 HTTP 서비스가 아니라 stdio MCP다. 원격 노출에는 별도 인증·권한·감사 체계가 필요하다.
 - 네이버 공식 SDK 또는 공식 제품이 아니다.
+
+### 커머스 API가 제공하지 않는 기능 (이 MCP의 한계가 아님)
+
+다음은 네이버 커머스 API 자체가 노출하지 않아 어떤 MCP·SDK로도 불가능하며, 스마트스토어센터 UI에서만 처리된다. (네이버 공식 GitHub 답변으로 확인: 쿠폰 #3199, 혜택 조회/수정 #3465, 리뷰 #1909, 리뷰·톡톡 #1582)
+
+- 쿠폰 발급·혜택(즉시할인 외) 관리, 적립/포인트 정책 — 즉시할인은 상품 등록/수정 바디의 `immediateDiscountPolicy`·`reservedDiscountPolicy`로만 설정 가능
+- 리뷰(구매평) 조회·답글
+- 네이버 톡톡 상담 데이터
+- 주소록(출고지·반품지) 생성·수정·삭제 — 조회만 가능
+- 주문 수량 분할, 구매자 배송지 변경, 판매자측 구매확정(구매확정은 구매자 액션)
 
 ## 문서
 

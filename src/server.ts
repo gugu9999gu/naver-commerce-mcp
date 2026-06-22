@@ -26,7 +26,7 @@ export function createServer(
   );
 
   registerCoreTools(server, config, client);
-  registerSellerTools(server, client);
+  registerSellerTools(server, config, client);
   registerProductTools(server, config, client);
   registerOrderWorkflowTools(server, config, client);
   registerClaimTools(server, config, client);

@@ -123,4 +123,29 @@ export function registerOrderWorkflowTools(
     `/v1/pay-order/seller/product-orders/${encodeURIComponent(productOrderId)}/delay`,
     { dispatchDueDate, delayedDispatchReason },
   ));
+
+  server.registerTool("naver_commerce_change_hope_delivery", {
+    title: "Change hope-delivery (희망배송) date for a product order",
+    description: "POST /v1/pay-order/seller/product-orders/{productOrderId}/hope-delivery/change. hopeDeliveryYmd is yyyyMMdd; hopeDeliveryHm is HHmm.",
+    inputSchema: {
+      productOrderId: z.string().min(1),
+      changeReason: z.string().min(1),
+      hopeDeliveryYmd: z.string().min(1),
+      hopeDeliveryHm: z.string().optional(),
+      region: z.string().optional(),
+      confirm: executeConfirmation,
+    },
+    annotations: mutationAnnotations(true),
+  }, async ({ productOrderId, changeReason, hopeDeliveryYmd, hopeDeliveryHm, region, confirm }) => guardedMutation(
+    config,
+    confirm,
+    client,
+    "POST",
+    `/v1/pay-order/seller/product-orders/${encodeURIComponent(productOrderId)}/hope-delivery/change`,
+    {
+      changeReason, hopeDeliveryYmd,
+      ...(hopeDeliveryHm === undefined ? {} : { hopeDeliveryHm }),
+      ...(region === undefined ? {} : { region }),
+    },
+  ));
 }

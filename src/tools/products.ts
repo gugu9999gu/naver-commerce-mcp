@@ -167,4 +167,56 @@ export function registerProductTools(
   }, async ({ request, confirm }) => guardedMutation(
     config, confirm, client, "PATCH", "/v1/products/origin-products/multi-update", request,
   ));
+
+  // --- Group (standard-group) products ---
+  // Registration and update are ASYNCHRONOUS: the response is not the final
+  // result. Poll naver_commerce_get_group_product_result afterwards.
+  server.registerTool("naver_commerce_create_group_product", {
+    title: "Create a standard-group product (async)",
+    description: "POST /v2/standard-group-products with the official request body. Async: poll naver_commerce_get_group_product_result for the outcome.",
+    inputSchema: { request: jsonObject, confirm: executeConfirmation },
+    annotations: mutationAnnotations(true),
+  }, async ({ request, confirm }) => guardedMutation(
+    config, confirm, client, "POST", "/v2/standard-group-products", request,
+  ));
+
+  server.registerTool("naver_commerce_get_group_product_result", {
+    title: "Poll standard-group product request result",
+    description: "GET /v2/standard-group-products/status to check the async result of group-product create/update/convert. Pass the request/poll token returned by the async call in query.",
+    inputSchema: { query: querySchema },
+    annotations: readAnnotations(),
+  }, async ({ query }) => callApi(client, {
+    method: "GET", path: "/v2/standard-group-products/status", query: query as QueryParams | undefined,
+  }));
+
+  server.registerTool("naver_commerce_get_group_product", {
+    title: "Get a standard-group product",
+    description: "GET /v2/standard-group-products/{groupProductNo}.",
+    inputSchema: { groupProductNo: identifier },
+    annotations: readAnnotations(),
+  }, async ({ groupProductNo }) => callApi(client, {
+    method: "GET",
+    path: `/v2/standard-group-products/${encodeURIComponent(String(groupProductNo))}`,
+  }));
+
+  server.registerTool("naver_commerce_update_group_product", {
+    title: "Update a standard-group product (async)",
+    description: "PUT /v2/standard-group-products/{groupProductNo} with the official request body. Async: poll naver_commerce_get_group_product_result.",
+    inputSchema: { groupProductNo: identifier, request: jsonObject, confirm: executeConfirmation },
+    annotations: mutationAnnotations(true),
+  }, async ({ groupProductNo, request, confirm }) => guardedMutation(
+    config, confirm, client, "PUT",
+    `/v2/standard-group-products/${encodeURIComponent(String(groupProductNo))}`,
+    request,
+  ));
+
+  server.registerTool("naver_commerce_delete_group_product", {
+    title: "Delete a standard-group product",
+    description: "DELETE /v2/standard-group-products/{groupProductNo} after explicit confirmation.",
+    inputSchema: { groupProductNo: identifier, confirm: executeConfirmation },
+    annotations: mutationAnnotations(true),
+  }, async ({ groupProductNo, confirm }) => guardedMutation(
+    config, confirm, client, "DELETE",
+    `/v2/standard-group-products/${encodeURIComponent(String(groupProductNo))}`,
+  ));
 }

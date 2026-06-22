@@ -92,7 +92,8 @@ function buildClaimOperation(args: ClaimArgs): { path: string; body?: JsonValue 
     case "cancel_request":
       return { path: `${base}/cancel/request`, body: { cancelReason: required("reason", args.reason) } };
     case "cancel_approve":
-      return { path: `${base}/cancel/approve`, body: { cancelReason: required("reason", args.reason) } };
+      // Official spec: POST .../claim/cancel/approve takes no request body.
+      return { path: `${base}/cancel/approve` };
     case "return_request":
       return {
         path: `${base}/return/request`,
