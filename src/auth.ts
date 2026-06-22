@@ -90,19 +90,25 @@ export class TokenProvider {
     const timestamp = this.now() + this.config.clockSkewMs;
     const signature = generateClientSecretSign(clientId, clientSecret, timestamp);
 
-    const url = new URL(`${this.config.baseUrl}/v1/oauth2/token`);
-    url.searchParams.set("client_id", clientId);
-    url.searchParams.set("timestamp", String(timestamp));
-    url.searchParams.set("client_secret_sign", signature);
-    url.searchParams.set("grant_type", "client_credentials");
-    url.searchParams.set("type", this.config.tokenType);
+    // NAVER's token endpoint expects application/x-www-form-urlencoded body
+    // parameters; sending them as query string returns HTTP 415.
+    const params = new URLSearchParams();
+    params.set("client_id", clientId);
+    params.set("timestamp", String(timestamp));
+    params.set("client_secret_sign", signature);
+    params.set("grant_type", "client_credentials");
+    params.set("type", this.config.tokenType);
     if (this.config.tokenType === "SELLER" && this.config.accountId) {
-      url.searchParams.set("account_id", this.config.accountId);
+      params.set("account_id", this.config.accountId);
     }
 
-    const response = await this.fetchImpl(url, {
+    const response = await this.fetchImpl(`${this.config.baseUrl}/v1/oauth2/token`, {
       method: "POST",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
       signal: AbortSignal.timeout(this.config.timeoutMs),
     });
 
